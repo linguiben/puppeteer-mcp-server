@@ -1,0 +1,25 @@
+{
+    // 解释器路径：自动指向本地虚拟环境
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    // 自动激活虚拟环境（VSCode 会在终端中运行 source .venv/bin/activate）
+    "python.terminal.activateEnvironment": true,
+    // 启用 lint 工具（选配）
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    // 启用自动格式化工具（选配）
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    // isort 自动导入排序（选配）
+    "python.sortImports.args": [
+        "--profile",
+        "black"
+    ],
+    // VSCode 终端中防止它重写 $PS1，允许使用 activate 中的提示符
+    "terminal.integrated.env.osx": {
+        "PS1": ""
+    },
+    // VSCode 打开终端时默认使用 bash（你也可以写 zsh）
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    // 可选：自动保存
+    "files.autoSave": "onFocusChange"
+}
