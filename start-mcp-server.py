@@ -26,6 +26,7 @@ mcp = FastMCP("host info mcp", host="0.0.0.0", port=8000, stateless_http=True)
 
 # Add the custom tool to the MCP instance
 mcp.add_tool(tools.webpage_capture)
+mcp.add_tool(tools.webpage_save_to_html)
 mcp.add_tool(tools.run_cmd, name="run_cmd", description="run a command in the host")
 
 

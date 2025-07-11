@@ -4,8 +4,9 @@ docker build -t puppeteer-mcp:1.0 -f ./Dockerfile .
 
 # 2. run
 cd /opt/docker/puppeteer-mcp
+# --rm \
 docker run \
-  --rm \
+  -d \
   --name puppeteer-mcp \
   --hostname puppeteer \
   -v $(pwd)/images:/app/images \
@@ -14,13 +15,9 @@ docker run \
   -w /app \
   --network wp_net \
   --entrypoint python \
-  puppeteer-mcp:1.0 start_mcp_server.py streamable-http
+  puppeteer-mcp:1.0 start-mcp-server.py streamable-http
 
 
-
-  --entrypoint node \
-
-  sina_world_mobile.cjs
 
 
 docker run --name puppeteer_test -v /Users/jupiter/99.data/6.docker/pupeteer/app:/app -u root --entrypoint "node /app/sina_world_mobile.cjs" mcp/puppeteer:arm64 # sina_world_mobile.cjs

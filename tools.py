@@ -1,28 +1,64 @@
 import subprocess
 
-def webpage_capture(url) -> str:
+
+import subprocess
+
+
+def webpage_capture(
+    url: str, x: int = 0, y: int = 0, width: int = 800, height: int = 600
+) -> str:
     """capture the webpage and return the screen short path saved in the host
 
+    Args:
+        url (str): the URL of the webpage to capture
+        x (int): x coordinate of the screenshot area (default 0)
+        y (int): y coordinate of the screenshot area (default 0)
+        width (int): width of the screenshot area (default 800)
+        height (int): height of the screenshot area (default 600)
     Returns:
         str: the screen short path saved in the host
     """
-    received_url = url
-    print(f"running webpage_capture({received_url})")
-    # 打印接收到的URL（可选）
-    if received_url:
-        print(f"Received URL: {received_url}")
-        
+    print(f"running webpage_capture()")
+    if url:
+        print(f"Received URL: {url}")
+
     # call node.js script to capture the webpage
     try:
         result = subprocess.run(
-            ['node', 'capture_url.js', received_url],
+            ["node", "capture_url.js", url, str(x), str(y), str(width), str(height)],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         return f"Error capturing webpage: {e.stderr.strip()}"
+
+
+def webpage_save_to_html(url) -> str:
+    """save the webpage as an HTML file in the host, return the path to the saved file
+    Args:
+        url (str): the URL of the webpage to capture
+    Returns:
+        str: the screen short path saved in the host
+    """
+    received_url = url
+    print(f"running webpage_capture()")
+    # 打印接收到的URL（可选）
+    if received_url:
+        print(f"Received URL: {received_url}")
+    # call node.js script to capture the webpage
+    try:
+        result = subprocess.run(
+            ["node", "url_save_as_html.js", received_url],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        return f"Error capturing webpage: {e.stderr.strip()}"
+
 
 def run_cmd(command: str) -> str:
     """run a Linux command in the host.
@@ -33,7 +69,7 @@ def run_cmd(command: str) -> str:
     or run a command like `cat /app/html/index.html` to read the content of a file.
     or run a command like `python -c "print(1+1)"` to run a Python script, it will return "2"
     or run a python command like `python -c "print('strawberry'.count('r'))"` to count the number of occurrences of the letter 'r' in the string "strawberry", it will return "3".
-    
+
     Args:
         command (str): the command to run
 
@@ -46,18 +82,14 @@ def run_cmd(command: str) -> str:
     #     return "Error: command must be a string or a list of strings."
     try:
         result = subprocess.run(
-            command,
-            shell=True,  
-            capture_output=True,
-            text=True,
-            check=True
+            command, shell=True, capture_output=True, text=True, check=True
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         return f"Error: {e.stderr.strip()}"
-    
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # print(webpage_capture("https://www.baidu.com"))
     run_cmd("ls -lrt . | wc -l ")  # Example command to list files in a directory
 
