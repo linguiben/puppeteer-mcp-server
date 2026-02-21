@@ -9,7 +9,7 @@ services:
     entrypoint: ["python"]
     command: ["start-mcp-server.py", "streamable-http"]
     ports:
-      - "8001:8000"
+      - "8001:8001"
     volumes:
       - ./images:/app/images
       - ./html:/app/html

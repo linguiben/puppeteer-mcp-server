@@ -16,7 +16,7 @@ This is a MCP server that uses Puppeteer to capture web pages and provide comman
 # htpp头必须包含 application/json
 
 # mcp list: list all tools
-curl -i -X POST http://localhost:8001/mcp \
+curl -i -X POST http://localhost:8001/mcp/ \
 -H "Content-Type: application/json" \
 -H "Accept: application/json, text/event-stream" \
 -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"progressToken":2}}}'
