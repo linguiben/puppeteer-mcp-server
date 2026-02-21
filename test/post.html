@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <title>POST 请求示例</title>
 </head>
+
 <body>
     <h2>提交表单到https:/127.0.0.1:9999/hsil/sse</h2>
     <form action="https:/127.0.0.1:9999/hsil/sse" method="post">
@@ -15,14 +17,14 @@
     <h2>提交Post</h2> <!-- 注意当Content-Type=application/json时，浏览器会强制发送OPTIONS请求，导致405错误-->
     <form id="postForm">
         <label for="target">mcp:</label>
-        <input type="text" id="target" name="target" value="http://127.0.0.1:8000/mcp/"><br>
+        <input type="text" id="target" name="target" value="http://tx.jupiterSo.com:8000/mcp/"><br>
         <label for="url">data: </label>
         <input type="text" id="url" name="url" value="https://www.baidu.com"><br>
         <input type="submit" value="提交">
     </form>
     <pre id="result"></pre>
     <script>
-        document.getElementById('postForm').onsubmit = async function(e) {
+        document.getElementById('postForm').onsubmit = async function (e) {
             e.preventDefault();
             const target = document.getElementById('target').value;
             const url = document.getElementById('url').value;
@@ -42,4 +44,5 @@
         }
     </script>
 </body>
+
 </html>

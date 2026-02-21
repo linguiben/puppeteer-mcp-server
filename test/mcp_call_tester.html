@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCP Streamable-HTTP Tester</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --line: #d8e0ef;
+      --text: #1a2433;
+      --muted: #56627a;
+      --brand: #0b63d1;
+      --ok: #1f8f4e;
+      --err: #b22a2a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(140deg, #eef3fb 0%, #f9fbff 100%);
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(15, 35, 70, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 22px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    label {
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+    }
+
+    .btns {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+
+    .btns button {
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    .btn-primary {
+      border-color: var(--brand);
+      color: var(--brand);
+      background: var(--brand);
+    }
+
+    .btn-secondary {
+      color: var(--brand);
+      border-color: var(--brand);
+    }
+
+    .status {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .ok {
+      color: var(--ok);
+    }
+
+    .err {
+      color: var(--err);
+    }
+
+    pre {
+      margin: 8px 0 0;
+      background: #0b1320;
+      color: #d5e7ff;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 200px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    code {
+      background: #edf3ff;
+      padding: 2px 5px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>MCP Call 测试页</h1>
+    <div class="hint">
+      适用于 <code>streamable-http</code> + <code>stateless_http=True</code> 场景。先选择模板，再按需编辑 JSON 后发送。
+    </div>
+
+    <div class="row">
+      <label for="endpoint">MCP Endpoint</label>
+      <input id="endpoint" type="text" value="/mcp/" />
+    </div>
+
+    <div class="row">
+      <label for="template">请求模板</label>
+      <select id="template">
+        <option value="toolsList">tools/list</option>
+        <option value="systemInfo">tools/call - system_info</option>
+        <option value="runCmd">tools/call - run_cmd</option>
+        <option value="capture">tools/call - webpage_capture</option>
+        <option value="saveHtml">tools/call - webpage_save_to_html</option>
+        <option value="custom">custom（手工编辑）</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label for="payload">JSON-RPC Payload</label>
+      <textarea id="payload"></textarea>
+    </div>
+
+    <div class="btns">
+      <button class="btn-primary" id="sendBtn">发送请求</button>
+      <button class="btn-secondary" id="prettyBtn">格式化 JSON</button>
+      <button class="btn-secondary" id="copyCurlBtn">复制 curl</button>
+    </div>
+
+    <div id="status" class="status"></div>
+    <div><strong>Response</strong></div>
+    <div style="margin-top:8px;"><strong>Extracted `data.result`</strong></div>
+    <pre id="resultOnly">等待请求...</pre>
+    <details style="margin-top:8px;">
+      <summary style="cursor:pointer; font-weight:700;">Full Response（点击展开）</summary>
+      <pre id="result">等待请求...</pre>
+    </details>
+  </div>
+
+  <script>
+    const templates = {
+      toolsList: {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/list",
+        params: { _meta: { progressToken: 2 } }
+      },
+      systemInfo: {
+        jsonrpc: "2.0",
+        id: 10,
+        method: "tools/call",
+        params: {
+          name: "system_info",
+          arguments: {},
+          _meta: { progressToken: 2 }
+        }
+      },
+      runCmd: {
+        jsonrpc: "2.0",
+        id: 11,
+        method: "tools/call",
+        params: {
+          name: "run_cmd",
+          arguments: { command: "echo Hello from MCP" },
+          _meta: { progressToken: 2 }
+        }
+      },
+      capture: {
+        jsonrpc: "2.0",
+        id: 12,
+        method: "tools/call",
+        params: {
+          name: "webpage_capture",
+          arguments: {
+            url: "https://www.example.com",
+            x: 0,
+            y: 0,
+            width: 1000,
+            height: 700
+          },
+          _meta: { progressToken: 2 }
+        }
+      },
+      saveHtml: {
+        jsonrpc: "2.0",
+        id: 13,
+        method: "tools/call",
+        params: {
+          name: "webpage_save_to_html",
+          arguments: { url: "https://www.example.com" },
+          _meta: { progressToken: 2 }
+        }
+      }
+    };
+
+    const templateEl = document.getElementById("template");
+    const payloadEl = document.getElementById("payload");
+    const endpointEl = document.getElementById("endpoint");
+    const resultOnlyEl = document.getElementById("resultOnly");
+    const resultEl = document.getElementById("result");
+    const statusEl = document.getElementById("status");
+
+    function setPayloadFromTemplate() {
+      const key = templateEl.value;
+      if (key === "custom") return;
+      payloadEl.value = JSON.stringify(templates[key], null, 2);
+    }
+
+    function safeParseJson(text) {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    }
+
+    function extractDataResult(bodyText, parsedBody) {
+      if (parsedBody && typeof parsedBody === "object" && "result" in parsedBody) {
+        return parsedBody.result;
+      }
+
+      if (parsedBody && parsedBody.data && typeof parsedBody.data === "object" && "result" in parsedBody.data) {
+        return parsedBody.data.result;
+      }
+
+      if (Array.isArray(parsedBody)) {
+        for (const item of parsedBody) {
+          if (item && typeof item === "object" && "result" in item) {
+            return item.result;
+          }
+          if (item && item.data && typeof item.data === "object" && "result" in item.data) {
+            return item.data.result;
+          }
+        }
+      }
+
+      // Streamable/SSE fallback: try parsing lines like `data: {...}`
+      const lines = bodyText.split(/\r?\n/);
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const payload = trimmed.slice(5).trim();
+        const eventObj = safeParseJson(payload);
+        if (eventObj && typeof eventObj === "object" && "result" in eventObj) {
+          return eventObj.result;
+        }
+        if (eventObj && eventObj.data && typeof eventObj.data === "object" && "result" in eventObj.data) {
+          return eventObj.data.result;
+        }
+      }
+
+      return null;
+    }
+
+    function formatExtractedResult(extracted) {
+      if (extracted === null) return "(未找到 data.result)";
+      if (typeof extracted === "string") return extracted;
+
+      // MCP tool result common shape: { content: [{ type: "text", text: "..." }], ... }
+      if (
+        extracted &&
+        typeof extracted === "object" &&
+        Array.isArray(extracted.content)
+      ) {
+        const lines = extracted.content
+          .map((item) => {
+            if (item && typeof item === "object" && typeof item.text === "string") {
+              return item.text;
+            }
+            return JSON.stringify(item, null, 2);
+          })
+          .filter(Boolean);
+        if (lines.length > 0) return lines.join("\n");
+      }
+
+      return JSON.stringify(extracted, null, 2);
+    }
+
+    async function sendRequest() {
+      const endpoint = endpointEl.value.trim();
+      let payloadObj;
+      try {
+        payloadObj = JSON.parse(payloadEl.value);
+      } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = "Payload 不是合法 JSON: " + err.message;
+        return;
+      }
+
+      statusEl.className = "status";
+      statusEl.textContent = "请求中...";
+      resultOnlyEl.textContent = "";
+      resultEl.textContent = "";
+
+      const startedAt = performance.now();
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream"
+          },
+          body: JSON.stringify(payloadObj)
+        });
+
+        const ms = Math.round(performance.now() - startedAt);
+        const headers = Array.from(res.headers.entries())
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+
+        let bodyText = "";
+        if (res.body && res.body.getReader) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            bodyText += decoder.decode(value, { stream: true });
+          }
+          bodyText += decoder.decode();
+        } else {
+          bodyText = await res.text();
+        }
+
+        const parsed = safeParseJson(bodyText);
+        const extracted = extractDataResult(bodyText, parsed);
+        const finalBody = parsed ? JSON.stringify(parsed, null, 2) : bodyText;
+        const extractedText = formatExtractedResult(extracted);
+        statusEl.className = "status " + (res.ok ? "ok" : "err");
+        statusEl.textContent = `HTTP ${res.status} ${res.statusText} | ${ms} ms`;
+        resultOnlyEl.textContent = extractedText;
+        resultEl.textContent = `# Response Headers\n${headers}\n\n# Response Body\n${finalBody}`;
+      } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = "请求失败: " + err.message;
+        resultOnlyEl.textContent = "(请求失败)";
+        resultEl.textContent = "请检查 endpoint、MCP 服务是否启动，以及浏览器 CORS 限制。";
+      }
+    }
+
+    function prettyJson() {
+      try {
+        const obj = JSON.parse(payloadEl.value);
+        payloadEl.value = JSON.stringify(obj, null, 2);
+      } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = "无法格式化: " + err.message;
+      }
+    }
+
+    async function copyCurl() {
+      const endpoint = endpointEl.value.trim();
+      const body = payloadEl.value.trim().replace(/'/g, "'\\''");
+      const cmd =
+        `curl -i -X POST ${endpoint} \\
+  -H "Content-Type: application/json" \\
+  -H "Accept: application/json, text/event-stream" \\
+  -d '${body}'`;
+      try {
+        await navigator.clipboard.writeText(cmd);
+        statusEl.className = "status ok";
+        statusEl.textContent = "curl 命令已复制到剪贴板。";
+      } catch {
+        statusEl.className = "status";
+        statusEl.textContent = "复制失败，请手工复制。";
+      }
+    }
+
+    templateEl.addEventListener("change", setPayloadFromTemplate);
+    document.getElementById("sendBtn").addEventListener("click", sendRequest);
+    document.getElementById("prettyBtn").addEventListener("click", prettyJson);
+    document.getElementById("copyCurlBtn").addEventListener("click", copyCurl);
+
+    setPayloadFromTemplate();
+  </script>
+</body>
+
+</html>

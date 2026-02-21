@@ -1,0 +1,18 @@
+services:
+  mcp-server:
+    container_name: puppeteer-mcp-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: puppeteer-mcp:local
+    working_dir: /app
+    entrypoint: ["python"]
+    command: ["start-mcp-server.py", "streamable-http"]
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./images:/app/images
+      - ./html:/app/html
+      - ./test:/app/test
+    restart: unless-stopped
+    init: true

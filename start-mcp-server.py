@@ -4,8 +4,10 @@
 # The tool will return the host information in JSON format.
 # The MCP server will run and listen for requests, responding with the host information.
 # The server can be run with different transports, such as stdio or SSE.
-from starlette.applications import Starlette
-from starlette.routing import Mount, Host
+from pathlib import Path
+from starlette.responses import RedirectResponse
+from starlette.routing import Mount, Route
+from starlette.staticfiles import StaticFiles
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 import tools
@@ -64,6 +66,23 @@ def main(transport: str = ""):
         else:
             print("Invalid input, please try again.")
             return
+    if transport == "streamable-http":
+        test_dir = Path(__file__).resolve().parent / "test"
+        mcp_app = mcp.streamable_http_app()
+
+        async def redirect_to_tester(_request):
+            return RedirectResponse(url="/test/mcp_call_tester.html", status_code=307)
+
+        # Use FastMCP's Starlette app directly so its lifespan/session manager
+        # initialization remains intact, then add local test routes.
+        mcp_app.router.routes.append(
+            Mount("/test", app=StaticFiles(directory=str(test_dir), html=True))
+        )
+        mcp_app.router.routes.append(Route("/", endpoint=redirect_to_tester))
+
+        uvicorn.run(mcp_app, host="0.0.0.0", port=8000)
+        return
+
     mcp.run(transport=transport)
     # mcp.run("stdio") # Run the MCP server with stdio transport or sse (Server-Sent Events)
     # mcp.run("sse", mount_path="/hsil/sse")
