@@ -10,19 +10,19 @@ This is a MCP server that uses Puppeteer to capture web pages and provide comman
 2. 本地方式启动（推荐先创建虚拟环境，参考下面的运行环境步骤）  
 `python start-mcp-server.py streamable-http`
 3. 访问方式
- - 3.1 直接访问 http://0.0.0.0:8000/test/mcp_call_tester.html  （推荐) 
+ - 3.1 直接访问 http://0.0.0.0:8001/test/mcp_call_tester.html  （推荐) 
  - 3.2 通过curl命令远程调用mcp tools
 ```shell
 # htpp头必须包含 application/json
 
 # mcp list: list all tools
-curl -i -X POST http://localhost:8000/mcp/ \
+curl -i -X POST http://localhost:8001/mcp \
 -H "Content-Type: application/json" \
 -H "Accept: application/json, text/event-stream" \
 -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"progressToken":2}}}'
 
 # mcp call: run_cmd (在mcp server所在机器上执行命令，支持任何shell命令，注意安全风险)
-curl -i -X POST http://localhost:8000/mcp/ \
+curl -i -X POST http://localhost:8001/mcp/ \
 -H "Content-Type: application/json" \
 -H "Accept: application/json, text/event-stream" \
 -d '{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name": "run_cmd", "arguments": { "command": "echo \"Hello from MCP Server\"" }, "_meta":{"progressToken":2}}}'
@@ -30,7 +30,7 @@ curl -i -X POST http://localhost:8000/mcp/ \
 
 ## 目录结构 todo
 
-## local test puppeteer 
+## Local development environment
 1. 创建python虚拟环境
 ```shell
 python3.11 -m venv .venv

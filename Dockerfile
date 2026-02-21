@@ -46,9 +46,6 @@ RUN apt-get update && \
     ln -s /usr/bin/python3.11 /usr/bin/python && \
     ln -s /usr/local/bin/pip3.11 /usr/bin/pip
 
-# 安装 Python 依赖
-RUN pip install httpx mcp -i https://pypi.tuna.tsinghua.edu.cn/simple
-
 # 安装 Node.js 20
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
@@ -64,10 +61,12 @@ WORKDIR /app
 COPY . .
 
 # 安装 Puppeteer 和 python 依赖
+# RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install -r requirements.txt
 RUN npm install
 
 # 入口命令（可根据项目调整）
 #CMD ["node", "sina.js"]
 EXPOSE 8000
-ENTRYPOINT ["python", "start_mcp_server.py"]
+ENTRYPOINT ["python", "start-mcp-server.py"]
 CMD ["streamable-http"]

@@ -1,6 +1,6 @@
 services:
   mcp-server:
-    container_name: puppeteer-mcp-server
+    container_name: mcp-puppeteer
     build:
       context: .
       dockerfile: Dockerfile

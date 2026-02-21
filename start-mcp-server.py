@@ -13,8 +13,15 @@ from mcp.server.fastmcp import FastMCP
 import tools
 import sys
 
+SERVER_HOST = "0.0.0.0"
+SERVER_PORT = 8001
+
 # Create a FastMCP instance with a name
-mcp = FastMCP("host info mcp", host="0.0.0.0", port=8000, stateless_http=True)
+mcp = FastMCP(
+    "host info mcp", host=SERVER_HOST, port=SERVER_PORT, stateless_http=True
+)
+# Pin streamable HTTP path to keep URL behavior stable across environments.
+mcp.settings.streamable_http_path = "/mcp/"
 # mcp = FastMCP("host info mcp")
 # mcp = FastMCP("host info mcp", host="0.0.0.0", port=8000)
 # mcp.settings.mount_path = "/hsil/sse"
@@ -80,7 +87,7 @@ def main(transport: str = ""):
         )
         mcp_app.router.routes.append(Route("/", endpoint=redirect_to_tester))
 
-        uvicorn.run(mcp_app, host="0.0.0.0", port=8000)
+        uvicorn.run(mcp_app, host=SERVER_HOST, port=SERVER_PORT)
         return
 
     mcp.run(transport=transport)
