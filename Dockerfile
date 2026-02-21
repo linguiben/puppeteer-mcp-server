@@ -67,6 +67,6 @@ RUN npm install
 
 # 入口命令（可根据项目调整）
 #CMD ["node", "sina.js"]
-EXPOSE 8000
+EXPOSE 8001
 ENTRYPOINT ["python", "start-mcp-server.py"]
 CMD ["streamable-http"]

@@ -18,5 +18,5 @@ echo "Starting MCP server with docker compose..."
 docker compose up -d --build
 
 echo "Started."
-echo "Test page: http://localhost:8000/test/mcp_call_tester.html"
-echo "MCP endpoint: http://localhost:8000/mcp/"
+echo "Test page: http://localhost:8001/test/mcp_call_tester.html"
+echo "MCP endpoint: http://localhost:8001/mcp/"
