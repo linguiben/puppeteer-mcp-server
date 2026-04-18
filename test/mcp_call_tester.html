@@ -132,6 +132,70 @@
       padding: 2px 5px;
       border-radius: 6px;
     }
+
+    .section-title {
+      margin-top: 18px;
+      font-weight: 700;
+    }
+
+    .download-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .download-item,
+    .download-empty {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fbff;
+    }
+
+    .download-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .download-name {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .download-meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .download-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      padding: 10px 12px;
+      border: 1px solid var(--brand);
+      border-radius: 10px;
+      color: var(--brand);
+      background: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 720px) {
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .download-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
   </style>
 </head>
 
@@ -178,6 +242,20 @@
       <summary style="cursor:pointer; font-weight:700;">Full Response（点击展开）</summary>
       <pre id="result">等待请求...</pre>
     </details>
+
+    <div class="section-title">下载浏览</div>
+    <div class="hint" style="margin-top:8px; margin-bottom:8px;">
+      点击下面按钮可浏览 <code>/app/html</code> 或 <code>/app/images</code> 中可下载的内容；HTML 快照目录会自动打包为 zip 下载。
+    </div>
+    <div class="btns">
+      <button class="btn-secondary" id="browseHtmlBtn">浏览 HTML 下载</button>
+      <button class="btn-secondary" id="browseImagesBtn">浏览 Images 下载</button>
+    </div>
+    <div id="downloadStatus" class="status"></div>
+    <div id="downloadRoot" class="hint" style="margin-bottom:8px;"></div>
+    <div id="downloadList" class="download-list">
+      <div class="download-empty">点击上方按钮浏览可下载文件。</div>
+    </div>
   </div>
 
   <script>
@@ -242,6 +320,9 @@
     const resultOnlyEl = document.getElementById("resultOnly");
     const resultEl = document.getElementById("result");
     const statusEl = document.getElementById("status");
+    const downloadStatusEl = document.getElementById("downloadStatus");
+    const downloadRootEl = document.getElementById("downloadRoot");
+    const downloadListEl = document.getElementById("downloadList");
 
     function setPayloadFromTemplate() {
       const key = templateEl.value;
@@ -319,9 +400,128 @@
       return JSON.stringify(extracted, null, 2);
     }
 
+    function escapeHtml(text) {
+      const value = String(text ?? "");
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function resolveAbsoluteUrl(rawUrl) {
+      const value = rawUrl.trim();
+      if (!value) {
+        throw new Error("MCP Endpoint 不能为空");
+      }
+      return new URL(value, window.location.origin).toString();
+    }
+
+    function setDownloadStatus(message, level = "") {
+      downloadStatusEl.className = "status" + (level ? ` ${level}` : "");
+      downloadStatusEl.textContent = message;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === null || bytes === undefined || Number.isNaN(Number(bytes))) {
+        return "";
+      }
+
+      const units = ["B", "KB", "MB", "GB"];
+      let value = Number(bytes);
+      let unitIndex = 0;
+      while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+      }
+
+      const digits = value >= 10 || unitIndex === 0 ? 0 : 1;
+      return `${value.toFixed(digits)} ${units[unitIndex]}`;
+    }
+
+    function formatTimestamp(seconds) {
+      if (!seconds) return "-";
+      return new Date(seconds * 1000).toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function renderDownloadEmpty(message) {
+      downloadListEl.innerHTML = `<div class="download-empty">${escapeHtml(message)}</div>`;
+    }
+
+    function encodePathPreservingSlashes(path) {
+      return String(path || "")
+        .split("/")
+        .map((part) => encodeURIComponent(part))
+        .join("/");
+    }
+
+    function renderDownloadList(items) {
+      if (!items.length) {
+        renderDownloadEmpty("当前目录下没有可下载内容。");
+        return;
+      }
+
+      downloadListEl.innerHTML = items
+        .map((item) => {
+          const kindText = item.kind === "directory" ? "目录（下载为 zip）" : "文件";
+          const sizeText = item.size_bytes === null ? "" : ` · ${formatBytes(item.size_bytes)}`;
+          const modifiedText = formatTimestamp(item.modified_at);
+          const fallbackDownloadPath = `./downloads/api/download/${encodeURIComponent(item.bucket || "")}/${encodePathPreservingSlashes(item.relative_path)}`;
+          const downloadUrl = new URL(fallbackDownloadPath, window.location.href).toString();
+          return `
+            <div class="download-item">
+              <div>
+                <div class="download-name">${escapeHtml(item.name)}</div>
+                <div class="download-meta">${kindText}${sizeText} · 修改时间 ${escapeHtml(modifiedText)}</div>
+              </div>
+              <a class="download-link" href="${downloadUrl}" download>下载</a>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    async function browseDownloads(bucket) {
+      const bucketLabel = bucket === "html" ? "HTML" : "Images";
+      const listUrl = new URL(`./downloads/api/list/${encodeURIComponent(bucket)}`, window.location.href).toString();
+      setDownloadStatus(`正在加载 ${bucketLabel} 下载列表...`);
+      downloadRootEl.textContent = "";
+      renderDownloadEmpty("正在读取目录...");
+
+      try {
+        const res = await fetch(listUrl, {
+          headers: { "Accept": "application/json" }
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+
+        setDownloadStatus(`已加载 ${bucketLabel} 下载列表，共 ${data.items.length} 项。`, "ok");
+        downloadRootEl.innerHTML = `当前目录：<code>${escapeHtml(data.root)}</code>`;
+        renderDownloadList(data.items.map((item) => ({ ...item, bucket })));
+      } catch (err) {
+        setDownloadStatus(`加载 ${bucketLabel} 下载列表失败: ${err.message}`, "err");
+        downloadRootEl.textContent = "";
+        renderDownloadEmpty("无法读取目录内容。");
+      }
+    }
+
     async function sendRequest() {
       const endpoint = endpointEl.value.trim();
+      let requestUrl;
       let payloadObj;
+
+      try {
+        requestUrl = resolveAbsoluteUrl(endpoint);
+      } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = err.message;
+        return;
+      }
+
       try {
         payloadObj = JSON.parse(payloadEl.value);
       } catch (err) {
@@ -337,7 +537,7 @@
 
       const startedAt = performance.now();
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetch(requestUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -392,10 +592,19 @@
     }
 
     async function copyCurl() {
-      const endpoint = endpointEl.value.trim();
+      let endpoint;
+      try {
+        endpoint = resolveAbsoluteUrl(endpointEl.value);
+      } catch (err) {
+        statusEl.className = "status err";
+        statusEl.textContent = err.message;
+        return;
+      }
+
+      const escapedEndpoint = endpoint.replace(/'/g, "'\\''");
       const body = payloadEl.value.trim().replace(/'/g, "'\\''");
       const cmd =
-        `curl -i -X POST ${endpoint} \\
+        `curl -i -X POST '${escapedEndpoint}' \\
   -H "Content-Type: application/json" \\
   -H "Accept: application/json, text/event-stream" \\
   -d '${body}'`;
@@ -413,6 +622,8 @@
     document.getElementById("sendBtn").addEventListener("click", sendRequest);
     document.getElementById("prettyBtn").addEventListener("click", prettyJson);
     document.getElementById("copyCurlBtn").addEventListener("click", copyCurl);
+    document.getElementById("browseHtmlBtn").addEventListener("click", () => browseDownloads("html"));
+    document.getElementById("browseImagesBtn").addEventListener("click", () => browseDownloads("images"));
 
     setPayloadFromTemplate();
   </script>

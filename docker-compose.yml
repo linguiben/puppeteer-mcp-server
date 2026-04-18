@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: puppeteer-mcp:local
+    image: puppeteer-mcp:060418
     working_dir: /app
     entrypoint: ["python"]
     command: ["start-mcp-server.py", "streamable-http"]
@@ -21,6 +21,10 @@ services:
           - mcp-server
     restart: unless-stopped
     init: true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 networks:
   wp-net:
