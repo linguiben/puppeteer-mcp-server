@@ -14,6 +14,12 @@ if ! docker compose version >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! docker network inspect wp-net >/dev/null 2>&1; then
+  echo "Error: docker network 'wp-net' does not exist."
+  echo "Create it first or start the nginx stack that provides this shared network."
+  exit 1
+fi
+
 echo "Starting MCP server with docker compose..."
 docker compose up -d --build
 

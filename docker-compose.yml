@@ -14,5 +14,14 @@ services:
       - ./images:/app/images
       - ./html:/app/html
       - ./test:/app/test
+    networks:
+      wp-net:
+        aliases:
+          - mcp-puppeteer
+          - mcp-server
     restart: unless-stopped
     init: true
+
+networks:
+  wp-net:
+    external: true

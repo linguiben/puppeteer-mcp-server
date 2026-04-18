@@ -4,6 +4,30 @@ puppeteer-mcp-server
 
 This is a MCP server that uses Puppeteer to capture web pages and provide command execution.
 
+## 工具行为
+
+### `webpage_save_to_html`
+
+`webpage_save_to_html` 现在会把目标页面保存为一个离线快照目录，而不是单个 HTML 文件。
+
+输出结构示例：
+
+```text
+html/20260323123000_example.com/
+  index.html
+  manifest.json
+  assets/
+    example.com/...
+```
+
+行为说明：
+
+- 只保存当前 URL 页面实际加载到的内容，不递归抓取超链接目标页
+- 默认自动滚动页面到底部后回到顶部，用于触发懒加载图片等资源
+- 会保存主页面快照以及页面加载到的 CSS、图片、脚本、媒体资源
+- 不下载字体资源
+- `manifest.json` 中会记录已保存资源列表和失败项，便于后续分析
+
 ## 运行
 1. docker 方式启动  
 `startup.sh`

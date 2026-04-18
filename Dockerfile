@@ -51,8 +51,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm
 
-# 设置 Puppeteer 版本和跳过 Chromium 下载（如要精简镜像）
-ENV PUPPETEER_SKIP_DOWNLOAD=false
+# Keep the browser cache in a stable location and install the browser explicitly
+# during image build so runtime containers do not depend on a writable cache
+# initialization path.
+ENV PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 # 创建应用目录
 WORKDIR /app
@@ -64,6 +67,7 @@ COPY . .
 # RUN pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip install -r requirements.txt
 RUN npm install
+RUN npx puppeteer browsers install chrome
 
 # 入口命令（可根据项目调整）
 #CMD ["node", "sina.js"]

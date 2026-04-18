@@ -1,9 +1,6 @@
 import subprocess
 
 
-import subprocess
-
-
 def webpage_capture(
     url: str, x: int = 0, y: int = 0, width: int = 800, height: int = 600
 ) -> str:
@@ -35,29 +32,30 @@ def webpage_capture(
         return f"Error capturing webpage: {e.stderr.strip()}"
 
 
-def webpage_save_to_html(url) -> str:
-    """save the webpage as an HTML file in the host, return the path to the saved file
+def webpage_save_to_html(url: str) -> str:
+    """Save a webpage as an offline snapshot directory and return index.html path.
+
     Args:
-        url (str): the URL of the webpage to capture
+        url (str): the URL of the webpage to snapshot.
+
     Returns:
-        str: the screen short path saved in the host
+        str: the saved snapshot entry path, such as
+            html/<timestamp>_<url_slug>/index.html
     """
-    received_url = url
-    print(f"running webpage_capture()")
-    # 打印接收到的URL（可选）
-    if received_url:
-        print(f"Received URL: {received_url}")
-    # call node.js script to capture the webpage
+    print("running webpage_save_to_html()")
+    if url:
+        print(f"Received URL: {url}")
+
     try:
         result = subprocess.run(
-            ["node", "url_save_as_html.js", received_url],
+            ["node", "url_save_as_html.js", url],
             capture_output=True,
             text=True,
             check=True,
         )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
-        return f"Error capturing webpage: {e.stderr.strip()}"
+        return f"Error saving webpage snapshot: {e.stderr.strip()}"
 
 
 def run_cmd(command: str) -> str:
